@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercício do Alien</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <style> body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; } </style>
+</head>
+
+<body>
+    <script>
+        // Utilizando a declaração const para definir um valor fixo para a largura e a altura do jogo
+        const larguraJogo = 700;
+        const alturaJogo = 850;
+
+        // Com a const config estamos configurando a tela do jogo em widht e height a partir dos valores fixos definidos anteriormente
+        const config = {
+            type: Phaser.AUTO,
+            width: larguraJogo,
+            height: alturaJogo,
+
+            // Definição do sistema de física 'arcade'
+            physics: {
+                default: 'arcade',
+                arcade:{
+                    gravity: { y: 300},
+                    debug: true
+                }
+            },
+
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            }
+        };
+
+        // Declaração que o game utiliza as configurações do phaser
+        const game = new Phaser.Game(config);
+
+        // Criação das variáveis
+        var alien;
+        var teclado;
+        var fogo;
+        var plataforma;
+        var moeda;
+        var pontuacao = 0;
+        var placar;
+        var aviao;
+        
+        // Função preload para o carregamento dos assets utilizados
+        function preload() {
+            this.load.image('background', 'assets/bg.png');
+            this.load.image('player', 'assets/alienigena.png');
+            this.load.image('turbo_nave', 'assets/turbo.png');
+            this.load.image('plataforma_tijolo', 'assets/tijolos.png');
+            this.load.image('moeda', 'assets/moeda.png');
+            this.load.image('aviao', 'assets/aviaozinho-removebg-preview.png');
+        }
+
+        // Função create para atribuição de propriedades a elementos carregados na função anterior e definição de regras para o estilo do jogo
+        function create() {
+            // Adição da imagem de fundo do jogo
+            this.add.image(larguraJogo/2, alturaJogo/2, 'background');
+
+            // Adição do fogo do modo turbo
+            fogo = this.add.sprite(0, 0, 'turbo_nave');
+            fogo.setVisible(false);
+
+            // Criação do alienigena
+            alien = this.physics.add.sprite(larguraJogo/2, 0, 'player');
+            alien.setCollideWorldBounds(true);
+
+            // Ativação do teclado
+            teclado = this.input.keyboard.createCursorKeys();
+
+            // Adição da platafroma e definição da colisão
+            plataforma = this.physics.add.staticImage(larguraJogo/2, alturaJogo/2, 'plataforma_tijolo');
+            this.physics.add.collider(alien, plataforma);
+
+            //Adição da imagem e colisão extra
+            aviao = this.physics.add.staticImage(110, 170, 'aviao').setScale(0.6);
+            this.physics.add.collider(alien, aviao);
+            aviao.body.setSize(310, 220, true);
+        
+
+            // Adição da moeda no jogo com ativação das barreiras, do 'bouce' e das colisões com a moeda
+            var posicaoMoeda_X = Phaser.Math.RND.between(50, 650);
+            moeda = this.physics.add.sprite(posicaoMoeda_X, 0, 'moeda');
+            moeda.setCollideWorldBounds(true);
+            moeda.setBounce(0.7);
+            this.physics.add.collider(moeda, plataforma);
+
+            // Adição do placar 
+            placar = this.add.text(50, 50, 'Moedas:' + pontuacao, {fontSize:'45px', fill:'#495613'});
+
+            // Definição da pontuação para quando o alien encostar na moeda
+            this.physics.add.overlap(alien, moeda, function(){
+
+                moeda.setVisible(false); // Moeda fica invisível
+
+                var posicaoMoeda_Y = Phaser.Math.RND.between(50, 650); // Sorteia o número em que a moeda irá cair
+                moeda.setPosition(posicaoMoeda_Y, 100); // Ajusta a posição da moeda
+                pontuacao += 1; // Soma pontuação
+                placar.setText('Moedas:' + pontuacao); // Atualiza o texto do placar
+
+                moeda.setVisible(true); // Ativa a visão da nova moeda
+
+            });
+        }
+
+        function update() {
+            // movimentação para esquerda[ <- ]
+            if (teclado.left.isDown) {
+                alien.setVelocityX(-150);
+            }
+
+            //movimento para a direita [ -> ]
+            else if (teclado.right.isDown) {
+                alien.setVelocityX(150);
+            }
+
+            // sem movimento horizontal [ x - 0 ]
+            else {
+                alien.setVelocityX(0);
+            }
+
+            // movimento para cima [ ^ ]
+            if (teclado.up.isDown) {
+                alien.setVelocityY(-150);
+                ativarTurbo();
+            }
+
+            // movimento para baixo [ gravidade em y]
+            else {
+                //ação da gravidade do jogo em y
+                alien.setVelocityY(150);
+                semTurbo();
+            }
+
+            // atualiza a posição do fogo em relação ao alien
+            fogo.setPosition(alien.x, alien.y + alien.height/2);
+        }
+
+        // Adição de função para ativar o turbo
+        function ativarTurbo() {
+            fogo.setVisible(true);
+        }
+
+        // Adição da função para o alien sem o turbo
+        function semTurbo() {
+            fogo.setVisible(false);
+        }
+    </script>
+</body>
+</html>
